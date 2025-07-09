@@ -1,0 +1,40 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Lint and Test (Optional)
+      run: |
+        npm run lint || true
+        npm test || true
+
+    # OPTIONAL: Deploy via SSH to VPS
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: root
+        key: ${{ secrets.VPS_PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd /root/Backend
+          git pull origin main
+          pnpm install
+          pm2 restart backend || pm2 start src/index.js --name backend
